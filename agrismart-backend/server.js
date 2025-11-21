@@ -21,13 +21,16 @@ const app = express();
 // -------------------------------------------------------
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL?.split(',') || [
+    origin: [
       'http://localhost:5173',
       'https://agri-smart-five.vercel.app'
     ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
