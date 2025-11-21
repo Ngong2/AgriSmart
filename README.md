@@ -1,4 +1,10 @@
 AgriSmart 🌱
+
+LIVE URL project https://agri-smart-five.vercel.app/
+
+https://gamma.app/docs/AgriSmart-Kakuma-jb7csm3u1mktziz
+
+
 Revolutionizing Agriculture with Smart Technology
 
 
