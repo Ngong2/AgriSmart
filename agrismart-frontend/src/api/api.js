@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// Add token automatically
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('agri_token');
@@ -18,14 +18,17 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Handle 401
+// Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Auto logout if 401 response
       localStorage.removeItem('agri_token');
       localStorage.removeItem('agri_user');
       window.location.href = '/login';
@@ -33,5 +36,13 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
 
 export default api;
