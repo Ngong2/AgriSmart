@@ -9,18 +9,22 @@ const TOKEN_EXPIRY = '7d';
 const RESET_TOKEN_EXPIRY = 3600000; // 1 hour
 const SALT_ROUNDS = 10;
 
-// Email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+// Email transporter configuration
+const createTransporter = () => {
+  return nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD // Use App Password, not regular password
+    }
+  });
+};
 
 // Utility functions
 const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'fallback-secret', { 
+    expiresIn: TOKEN_EXPIRY 
+  });
 };
 
 const formatUserResponse = (user) => ({
@@ -40,6 +44,8 @@ const validateRequiredFields = (fields, required) => {
 const register = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body;
+
+    console.log('Registration attempt:', { name, email, phone, role });
 
     // Validate required fields
     const validationError = validateRequiredFields(req.body, ['name', 'email', 'password']);
@@ -82,7 +88,7 @@ const register = async (req, res) => {
     const user = new User({ 
       name, 
       email, 
-      phone, 
+      phone: phone || '', 
       password: hashedPassword,
       role: role || 'buyer'
     });
@@ -121,6 +127,8 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('Login attempt for:', email);
+
     // Validate required fields
     const validationError = validateRequiredFields(req.body, ['email', 'password']);
     if (validationError) {
@@ -131,7 +139,7 @@ const login = async (req, res) => {
     }
 
     // Find user and validate
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ 
         success: false,
@@ -150,6 +158,8 @@ const login = async (req, res) => {
 
     // Generate token and respond
     const token = generateToken(user._id);
+
+    console.log('Login successful for user:', user.email, 'Role:', user.role);
 
     res.json({
       success: true,
@@ -197,45 +207,53 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
+    // Use deployed frontend URL
     const resetUrl = `${process.env.FRONTEND_URL || 'https://agri-smart-five.vercel.app'}/reset-password/${resetToken}`;
     
     // Send email
-    const mailOptions = {
-      from: `AgriConnect <${process.env.GMAIL_USER}>`,
-      to: user.email,
-      subject: 'Password Reset Request - AgriConnect',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #2d7738; margin: 0;">AgriConnect</h2>
+    try {
+      const transporter = createTransporter();
+      const mailOptions = {
+        from: `AgriConnect <${process.env.GMAIL_USER}>`,
+        to: user.email,
+        subject: 'Password Reset Request - AgriConnect',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h2 style="color: #2d7738; margin: 0;">AgriConnect</h2>
+            </div>
+            <h3 style="color: #333;">Password Reset Request</h3>
+            <p>Hello ${user.name},</p>
+            <p>You requested to reset your password. Click the button below to create a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="background-color: #2d7738; color: white; padding: 12px 30px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;
+                        font-size: 16px; font-weight: bold;">
+                Reset Password
+              </a>
+            </div>
+            <p style="color: #666; font-size: 14px;">
+              Or copy and paste this link in your browser:<br>
+              <span style="word-break: break-all;">${resetUrl}</span>
+            </p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
+              <p>This link will expire in 1 hour for security reasons.</p>
+              <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
+              <p>Best regards,<br><strong>AgriConnect Team</strong></p>
+            </div>
           </div>
-          <h3 style="color: #333;">Password Reset Request</h3>
-          <p>Hello ${user.name},</p>
-          <p>You requested to reset your password. Click the button below to create a new password:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #2d7738; color: white; padding: 12px 30px; 
-                      text-decoration: none; border-radius: 5px; display: inline-block;
-                      font-size: 16px; font-weight: bold;">
-              Reset Password
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            Or copy and paste this link in your browser:<br>
-            <span style="word-break: break-all;">${resetUrl}</span>
-          </p>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
-            <p>This link will expire in 1 hour for security reasons.</p>
-            <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
-            <p>Best regards,<br><strong>AgriConnect Team</strong></p>
-          </div>
-        </div>
-      `
-    };
+        `
+      };
 
-    await transporter.sendMail(mailOptions);
-    
-    console.log(`Password reset email sent to: ${user.email}`);
+      await transporter.sendMail(mailOptions);
+      console.log(`Password reset email sent to: ${user.email}`);
+      
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // Continue anyway for security
+    }
+
     if (process.env.NODE_ENV === 'development') {
       console.log('Reset URL (development):', resetUrl);
     }

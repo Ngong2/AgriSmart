@@ -1,5 +1,4 @@
-// src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,8 +10,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { login, connectionStatus } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (connectionStatus === 'disconnected') {
+      setError('Cannot connect to server. Please check your internet connection and try again.');
+    }
+  }, [connectionStatus]);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,6 +36,13 @@ const Login = () => {
       setError('Please fill in all fields');
       return;
     }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
     
     setLoading(true);
     setError('');
@@ -38,12 +50,12 @@ const Login = () => {
     try {
       const response = await login(formData.email, formData.password);
       
-      // Get user role from response - handle different response structures
-      const userRole = response?.user?.role || response?.role || response?.data?.user?.role;
+      // Get user role from response
+      const userRole = response?.user?.role;
       
-      console.log('Login successful, user role:', userRole); // For debugging
+      console.log('✅ Login successful, user role:', userRole);
       
-      // Redirect based on role with fallback - FIXED PATHS
+      // Redirect based on role
       switch (userRole?.toLowerCase()) {
         case 'farmer':
           navigate('/farmer-dashboard');
@@ -55,16 +67,14 @@ const Login = () => {
           navigate('/admin-dashboard');
           break;
         default:
-          // If role not recognized, redirect to a default dashboard or home
           console.warn('Unknown role, redirecting to home');
           navigate('/');
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Login failed. Please try again.'
-      );
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          'Login failed. Please check your credentials and try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -89,6 +99,14 @@ const Login = () => {
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {connectionStatus === 'disconnected' && (
+            <div className="rounded-md bg-yellow-50 p-4">
+              <div className="text-sm text-yellow-700">
+                ⚠️ Server connection issue. Some features may not work properly.
+              </div>
+            </div>
+          )}
+          
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{error}</div>
@@ -157,7 +175,7 @@ const Login = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || connectionStatus === 'disconnected'}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
             >
               {loading ? (
