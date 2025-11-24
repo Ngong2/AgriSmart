@@ -22,7 +22,7 @@ import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile"; // Add this import
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -49,7 +49,7 @@ export default function App() {
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
               <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
-              <Route path="/profile" element={<Profile />} /> {/* Add this route */}
+              <Route path="/profile" element={<Profile />} />
               
               {/* Optional: Add a catch-all route for 404 pages */}
               <Route path="*" element={<NotFound />} />
