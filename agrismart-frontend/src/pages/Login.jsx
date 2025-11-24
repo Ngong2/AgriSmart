@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -45,11 +46,10 @@ const Login = () => {
       // Redirect based on role with fallback - FIXED PATHS
       switch (userRole?.toLowerCase()) {
         case 'farmer':
-        case 'farm':
-          navigate('/farmer-dashboard'); // Changed to match route
+          navigate('/farmer-dashboard');
           break;
         case 'buyer':
-          navigate('/buyer-dashboard'); // Changed to match route
+          navigate('/buyer-dashboard');
           break;
         case 'admin':
           navigate('/admin-dashboard');

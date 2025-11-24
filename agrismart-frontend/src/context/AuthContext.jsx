@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     setToken(null);
     setUser(null);
+    // Use navigate instead of window.location for SPA behavior
     window.location.href = '/login';
   };
 
@@ -93,5 +94,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Export the context as default as well for backward compatibility
 export default AuthContext;
