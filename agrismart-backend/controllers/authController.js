@@ -197,7 +197,7 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://agri-smart-five.vercel.app'}/reset-password/${resetToken}`;
     
     // Send email
     const mailOptions = {
