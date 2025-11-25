@@ -12,8 +12,9 @@ const {
 } = require('../controllers/ordersController');
 
 router.post('/', auth, createOrder);
-router.get('/:id', auth, getOrder);
 router.get('/', auth, getUserOrders);
+router.get('/my-orders', auth, getUserOrders);
+router.get('/:id', auth, getOrder);
 router.put('/:id/status', auth, updateOrderStatus);
 
 // Payment routes
