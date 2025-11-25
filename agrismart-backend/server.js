@@ -53,6 +53,17 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 
 // -------------------------------------------------------
+//  Health Check
+// -------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    message: 'AgriSmart API is running smoothly...',
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// -------------------------------------------------------
 //  Not Found handler for API routes
 // -------------------------------------------------------
 app.use((req, res, next) => {
@@ -63,17 +74,6 @@ app.use((req, res, next) => {
     });
   }
   next();
-});
-
-// -------------------------------------------------------
-//  Health Check
-// -------------------------------------------------------
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    ok: true,
-    message: 'AgriSmart API is running smoothly...',
-    environment: process.env.NODE_ENV || 'development',
-  });
 });
 
 // -------------------------------------------------------
