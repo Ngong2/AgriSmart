@@ -32,13 +32,33 @@ const formatUserResponse = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
-  phone: user.phone
+  phone: user.phone,
+  address: user.address,
+  bio: user.bio,
+  farmName: user.farmName,
+  farmLocation: user.farmLocation,
+  farmSize: user.farmSize,
+  farmingType: user.farmingType,
+  language: user.language
 });
 
 const validateRequiredFields = (fields, required) => {
   const missing = required.filter(field => !fields[field]);
   return missing.length > 0 ? `${missing.join(', ')} are required` : null;
 };
+
+const PROFILE_FIELDS = [
+  'name',
+  'email',
+  'phone',
+  'address',
+  'bio',
+  'farmName',
+  'farmLocation',
+  'farmSize',
+  'farmingType',
+  'language'
+];
 
 // Register Controller
 const register = async (req, res) => {
@@ -329,6 +349,128 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: formatUserResponse(user)
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error fetching profile'
+    });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const updates = {};
+
+    PROFILE_FIELDS.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    if (updates.email) {
+      updates.email = updates.email.toLowerCase();
+      const existingUser = await User.findOne({
+        email: updates.email,
+        _id: { $ne: req.user._id }
+      });
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already in use'
+        });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      user: formatUserResponse(updatedUser),
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error updating profile'
+    });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    user.lastPasswordChange = Date.now();
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error updating password'
+    });
+  }
+};
+
 // Logout Controller
 const logout = async (req, res) => {
   try {
@@ -355,5 +497,8 @@ module.exports = {
   login,
   forgotPassword,
   resetPassword,
-  logout
+  logout,
+  getProfile,
+  updateProfile,
+  changePassword
 };

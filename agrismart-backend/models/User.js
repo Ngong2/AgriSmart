@@ -33,6 +33,31 @@ const userSchema = new mongoose.Schema({
     enum: ['buyer', 'farmer', 'admin'], 
     default: 'buyer' 
   },
+  address: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'Address cannot exceed 200 characters']
+  },
+  bio: {
+    type: String,
+    maxlength: [500, 'Bio cannot exceed 500 characters']
+  },
+  farmName: {
+    type: String,
+    trim: true
+  },
+  farmLocation: {
+    type: String,
+    trim: true
+  },
+  farmSize: {
+    type: String,
+    trim: true
+  },
+  farmingType: {
+    type: String,
+    trim: true
+  },
   lastLogoutAt: {
     type: Date
   },

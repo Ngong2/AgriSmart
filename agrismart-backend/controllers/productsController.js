@@ -205,10 +205,28 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const listMyProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ sellerId: req.user._id })
+      .populate('sellerId', 'name email phone')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      products,
+      total: products.length
+    });
+  } catch (error) {
+    console.error('List my products error:', error);
+    res.status(500).json({ message: 'Server error fetching your products' });
+  }
+};
+
 module.exports = { 
   createProduct, 
   listProducts, 
   getProduct, 
   updateProduct, 
-  deleteProduct 
+  deleteProduct,
+  listMyProducts
 };
