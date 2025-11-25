@@ -69,6 +69,8 @@ export const setAuthToken = (token) => {
   }
 };
 
+export const logoutRequest = () => api.post('/auth/logout');
+
 // Test connection function
 export const testConnection = async () => {
   try {

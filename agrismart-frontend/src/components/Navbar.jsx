@@ -14,10 +14,14 @@ const Navbar = () => {
   const cartItems = JSON.parse(localStorage.getItem('agri_cart') || '[]');
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
-  const handleLogout = () => {
-    logout();
-    setDropdownOpen(false);
-    setMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setDropdownOpen(false);
+      setMenuOpen(false);
+    }
   };
 
   const toggleMenu = () => setMenuOpen(!menuOpen);

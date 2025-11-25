@@ -53,6 +53,19 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 
 // -------------------------------------------------------
+//  Not Found handler for API routes
+// -------------------------------------------------------
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      success: false,
+      message: 'Requested API endpoint was not found. Please verify the URL or consult the documentation at /api/health.'
+    });
+  }
+  next();
+});
+
+// -------------------------------------------------------
 //  Health Check
 // -------------------------------------------------------
 app.get('/api/health', (req, res) => {

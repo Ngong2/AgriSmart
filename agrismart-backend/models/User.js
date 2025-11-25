@@ -33,6 +33,9 @@ const userSchema = new mongoose.Schema({
     enum: ['buyer', 'farmer', 'admin'], 
     default: 'buyer' 
   },
+  lastLogoutAt: {
+    type: Date
+  },
   language: { 
     type: String, 
     default: 'en' 

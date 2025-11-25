@@ -11,7 +11,7 @@ const SALT_ROUNDS = 10;
 
 // Email transporter configuration
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.GMAIL_USER,
@@ -329,9 +329,31 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Logout Controller
+const logout = async (req, res) => {
+  try {
+    if (req.user) {
+      req.user.lastLogoutAt = Date.now();
+      await req.user.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during logout'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  logout
 };

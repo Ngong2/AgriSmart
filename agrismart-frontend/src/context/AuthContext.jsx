@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import api, { setAuthToken, testConnection } from '../api/api';
+import api, { setAuthToken, testConnection, logoutRequest } from '../api/api';
 
 // Create and export AuthContext
 export const AuthContext = createContext();
@@ -102,14 +102,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     console.log('👋 User logging out');
-    localStorage.removeItem('agri_token');
-    localStorage.removeItem('agri_user');
-    setAuthToken(null);
-    setToken(null);
-    setUser(null);
-    window.location.href = '/login';
+    try {
+      if (token) {
+        await logoutRequest();
+      }
+    } catch (error) {
+      console.warn('Logout request failed:', error.response?.data || error.message);
+    } finally {
+      localStorage.removeItem('agri_token');
+      localStorage.removeItem('agri_user');
+      setAuthToken(null);
+      setToken(null);
+      setUser(null);
+    }
   };
 
   const value = {

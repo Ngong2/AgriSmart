@@ -10,7 +10,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, connectionStatus } = useAuth();
+  const { login, connectionStatus, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,6 +18,24 @@ const Login = () => {
       setError('Cannot connect to server. Please check your internet connection and try again.');
     }
   }, [connectionStatus]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      switch (user.role.toLowerCase()) {
+        case 'farmer':
+          navigate('/farmer-dashboard', { replace: true });
+          break;
+        case 'buyer':
+          navigate('/buyer-dashboard', { replace: true });
+          break;
+        case 'admin':
+          navigate('/admin-dashboard', { replace: true });
+          break;
+        default:
+          navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
