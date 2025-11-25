@@ -375,6 +375,13 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
     const updates = {};
 
     PROFILE_FIELDS.forEach((field) => {
@@ -383,8 +390,15 @@ const updateProfile = async (req, res) => {
       }
     });
 
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields to update'
+      });
+    }
+
     if (updates.email) {
-      updates.email = updates.email.toLowerCase();
+      updates.email = updates.email.toLowerCase().trim();
       const existingUser = await User.findOne({
         email: updates.email,
         _id: { $ne: req.user._id }
@@ -404,6 +418,13 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
     res.json({
       success: true,
       user: formatUserResponse(updatedUser),
@@ -411,9 +432,18 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map(err => err.message).join(', ')
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Internal server error updating profile'
+      message: 'Internal server error updating profile',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

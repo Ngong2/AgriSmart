@@ -207,18 +207,29 @@ const deleteProduct = async (req, res) => {
 
 const listMyProducts = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required' 
+      });
+    }
+
     const products = await Product.find({ sellerId: req.user._id })
       .populate('sellerId', 'name email phone')
       .sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      products,
-      total: products.length
+      products: products || [],
+      total: products ? products.length : 0
     });
   } catch (error) {
     console.error('List my products error:', error);
-    res.status(500).json({ message: 'Server error fetching your products' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error fetching your products',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
