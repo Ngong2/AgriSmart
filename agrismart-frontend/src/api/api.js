@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30 second timeout (Render free tier can be slow to wake up)
 });
 
 // Request interceptor to add auth token
@@ -37,10 +37,18 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Handle timeout errors specifically
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      console.error('⏱️ Request timeout - server may be sleeping. Please try again.');
+      error.timeoutError = true;
+      error.userMessage = 'Server is taking too long to respond. This may happen if the server is sleeping. Please try again in a moment.';
+    }
+
     console.error('❌ Response error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message
+      message: error.response?.data?.message || error.message,
+      timeout: error.timeoutError
     });
 
     if (error.response?.status === 401) {
@@ -77,9 +85,17 @@ export const testConnection = async () => {
     const response = await api.get('/health');
     return { success: true, data: response.data };
   } catch (error) {
+    let errorMessage = error.response?.data?.message || error.message;
+    
+    // Provide helpful message for timeouts
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      errorMessage = 'Server timeout - the server may be sleeping. Please wait a moment and try again.';
+    }
+    
     return { 
       success: false, 
-      error: error.response?.data?.message || error.message 
+      error: errorMessage,
+      timeout: error.code === 'ECONNABORTED' || error.message.includes('timeout')
     };
   }
 };
